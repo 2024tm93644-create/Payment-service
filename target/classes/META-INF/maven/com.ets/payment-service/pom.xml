@@ -62,6 +62,13 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+<!-- Add inside <dependencies> -->
+<dependency>
+  <groupId>org.springdoc</groupId>
+  <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+  <version>2.1.0</version> <!-- replace with latest if needed -->
+</dependency>
+
         <!-- Lombok (optional) -->
         <dependency>
             <groupId>org.projectlombok</groupId>

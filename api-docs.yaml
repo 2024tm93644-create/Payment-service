@@ -1,0 +1,119 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+paths:
+  /v1/payments/refund:
+    post:
+      tags:
+      - payment-controller
+      operationId: refund
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /v1/payments/charge:
+    post:
+      tags:
+      - payment-controller
+      operationId: charge
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /v1/payments/{id}:
+    get:
+      tags:
+      - payment-controller
+      operationId: getPayment
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Payment'
+components:
+  schemas:
+    RefundRequest:
+      type: object
+      properties:
+        paymentId:
+          type: integer
+          format: int32
+        amount:
+          type: number
+          format: double
+    PaymentRequest:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int32
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        method:
+          type: string
+    Payment:
+      type: object
+      properties:
+        paymentId:
+          type: integer
+          format: int32
+        orderId:
+          type: integer
+          format: int32
+        amount:
+          type: number
+          format: double
+        method:
+          type: string
+        status:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
