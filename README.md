@@ -1,6 +1,8 @@
 Author -
 Amitosh Gautam
+
 Payment Service - Event Ticketing System
+
 Developed as part of the Software Architecture and Microservices Assignment.
 
 ** For more details check the Amitosh_PaymentService.pdf file attached in the repository **
