@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/paymentsdb
+    url: jdbc:postgresql://postgres:5432/paymentsdb
     username: postgres
     password: Gautam123@
   jpa:
