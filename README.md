@@ -100,7 +100,7 @@ If the same key is reused with identical data, the service returns the previous 
 If the payload differs, it throws a conflict error.
 
 Example header:
-Idempotency-Key: TXN-12345
+Idempotency-Key: 12345
 
 Payment Status Flow -
 Payment starts in PENDING state.
