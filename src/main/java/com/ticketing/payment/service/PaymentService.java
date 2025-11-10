@@ -3,6 +3,11 @@ package com.ticketing.payment.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ticketing.payment.dto.PaymentRequest;
 import com.ticketing.payment.dto.RefundRequest;
+import com.ticketing.payment.exception.AlreadyRefundedException;
+import com.ticketing.payment.exception.IdempotencyConflictException;
+import com.ticketing.payment.exception.InvalidPaymentStatusException;
+import com.ticketing.payment.exception.InvalidRefundAmountException;
+import com.ticketing.payment.exception.PaymentNotFoundException;
 import com.ticketing.payment.model.IdempotencyKey;
 import com.ticketing.payment.model.Payment;
 import com.ticketing.payment.model.Refund;
@@ -51,7 +56,7 @@ public class PaymentService {
         if (existing.isPresent()) {
             IdempotencyKey k = existing.get();
             if (!k.getRequestFingerprint().equals(fp)) {
-                throw new RuntimeException("Idempotency conflict: same key, different payload");
+            	throw new IdempotencyConflictException("Idempotency conflict: same key, different payload");
             }
             try {
                 Map resp = objectMapper.readValue(k.getResponseBody(), Map.class);
@@ -127,47 +132,41 @@ public class PaymentService {
     public Map<String, Object> refund(RefundRequest req) {
         Optional<Payment> pOpt = paymentRepository.findById(req.getPaymentId());
         if (pOpt.isEmpty()) {
-            throw new RuntimeException("Payment not found");
+            throw new PaymentNotFoundException("Payment not found");
         }
 
         Payment p = pOpt.get();
 
-        // Validate payment status
         if (!"SUCCESS".equals(p.getStatus())) {
-            throw new RuntimeException("Only successful payments can be refunded");
+            throw new InvalidPaymentStatusException("Only successful payments can be refunded");
         }
 
-        // Validate refund amount
         if (req.getAmount() == null || req.getAmount() <= 0) {
-            throw new RuntimeException("Invalid refund amount. Must be greater than zero");
-        }
-        if (req.getAmount() > p.getAmount()) {
-            throw new RuntimeException("Refund amount cannot exceed original payment amount");
+            throw new InvalidRefundAmountException("Invalid refund amount. Must be greater than zero");
         }
 
-        // Check if payment already refunded
+        if (req.getAmount() > p.getAmount()) {
+            throw new InvalidRefundAmountException("Refund amount cannot exceed original payment amount");
+        }
+
         Optional<Refund> existingRefund = refundRepository.findByPaymentId(p.getPaymentId());
         if (existingRefund.isPresent()) {
-            throw new RuntimeException("Payment already refunded");
+            throw new AlreadyRefundedException("Payment already refunded");
         }
 
-        // Create new refund record
         Refund r = new Refund();
         r.setPaymentId(p.getPaymentId());
         r.setAmount(req.getAmount());
         r.setStatus("PENDING");
-        r = refundRepository.save(r);
+        refundRepository.save(r);
 
-        // Simulate refund processing (always success for valid refund)
         r.setStatus("SUCCESS");
         r.setProviderRef("REF-" + java.util.UUID.randomUUID().toString().substring(0, 8));
         refundRepository.save(r);
 
-        // Update payment status
         p.setStatus("REFUNDED");
         paymentRepository.save(p);
 
-        // Build refund response
         Map<String, Object> resp = new HashMap<>();
         resp.put("refundId", r.getId());
         resp.put("status", "SUCCESS");
@@ -178,6 +177,7 @@ public class PaymentService {
 
         return resp;
     }
+
 
     @Transactional(readOnly = true)
     public Payment getPayment(Integer id) {
